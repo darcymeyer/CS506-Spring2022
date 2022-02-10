@@ -3,6 +3,8 @@ from math import inf
 import random
 import csv
 
+from .sim import euclidean_dist
+
 
 def point_avg(points):
     """
@@ -11,7 +13,10 @@ def point_avg(points):
     
     Returns a new point which is the center of all the points.
     """
-    raise NotImplementedError()
+    dim = len(points[0])
+    num_points = len(points)
+    avg = [sum(p[i] for p in points)/num_points for i in range(dim)]
+    return avg
 
 
 def update_centers(dataset, assignments):
@@ -21,7 +26,12 @@ def update_centers(dataset, assignments):
     Compute the center for each of the assigned groups.
     Return `k` centers in a list
     """
-    raise NotImplementedError()
+    centers = [
+        point_avg([d for d,a in zip(dataset, assignments) 
+                    if a==assignment])
+        for assignment in sorted(set(assignments))
+    ]
+    return centers
 
 def assign_points(data_points, centers):
     """
@@ -43,20 +53,25 @@ def distance(a, b):
     """
     Returns the Euclidean distance between a and b
     """
-    raise NotImplementedError()
+    return euclidean_dist(a, b)
 
 def distance_squared(a, b):
-    raise NotImplementedError()
+    return distance(a, b)**2
 
 def generate_k(dataset, k):
     """
     Given `data_set`, which is an array of arrays,
     return a random set of k points from the data_set
     """
-    raise NotImplementedError()
+    return random.sample(dataset, k=k)
 
 def cost_function(clustering):
-    raise NotImplementedError()
+    cost = 0
+    for _, points in clustering.items():
+        center = point_avg(points)
+        for point in points:
+            cost += euclidean_dist(center, point)
+    return cost
 
 
 def generate_k_pp(dataset, k):
@@ -66,7 +81,10 @@ def generate_k_pp(dataset, k):
     where points are picked with a probability proportional
     to their distance as per kmeans pp
     """
-    raise NotImplementedError()
+    centers = [random.choice(dataset)]
+    for i in range(1, k):
+        centers += random.choices(dataset, weights=[sum([distance_squared(center, x) for center in centers]) for x in dataset])
+    return centers
 
 
 def _do_lloyds_algo(dataset, k_points):
